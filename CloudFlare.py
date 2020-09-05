@@ -10,22 +10,28 @@ class CloudFlare:
     def get_zone_ids(self):
         url = BASE_URL + "/zones"
 
-        params = {
-            'status': 'active'
-        }
+        loop = True
+        page = 1
+        while loop:
+            params = {
+                'status': 'active',
+                'page': page
+            }
 
-        response = requests.request("GET", url, headers=HEADERS, params=params)
-        json = response.json()
-        if response.status_code != 200:
-            print(json)
-            return
+            response = requests.request("GET", url, headers=HEADERS, params=params)
+            json = response.json()
+            if response.status_code != 200:
+                print(json)
+                return
 
-        if not json['success']:
-            print(json['errors'])
-        else:
-            for zone in response.json()['result']:
-                if zone['name'] in self.domains:
-                    yield zone['id']
+            if len(response.json()['result']):
+                for zone in response.json()['result']:
+                    if zone['name'] in self.domains:
+                        yield zone['id']
+            else:
+                loop = False
+
+            page += 1
 
     def get_dns_record_ids(self, zone_id):
         url = f'{BASE_URL}/zones/{zone_id}/dns_records'
